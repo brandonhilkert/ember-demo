@@ -1,78 +1,81 @@
 window.App = Ember.Application.create();
 
 App.ApplicationView = Ember.View.extend({
-  templateName: "application",
-  classNames: ["application-view"]
+  templateName: "application"
 });
 App.ApplicationController = Ember.Controller.extend({
-  slogan: "a framework for creating abitious web applications.",
-  isSlogan: true
 });
 
-App.CarsView = Ember.View.extend({
-  templateName: 'cars'
+App.AllContributorsController = Ember.ArrayController.extend();
+App.AllContributorsView = Ember.View.extend({
+  templateName: 'contributors'
 });
-App.CarsController = Ember.ArrayController.extend();
 
-App.ShoesView = Ember.View.extend({
-  templateName: "shoes"
+App.OneContributorController = Ember.ObjectController.extend();
+App.OneContributorView = Ember.View.extend({
+  templateName: 'contributor'
 });
-App.ShoesController = Ember.ArrayController.extend();
 
-App.SalutationView = Ember.View.extend({
-  templateName: "salutation"
+App.Contributor = Ember.Object.extend();
+App.Contributor.reopenClass({
+  allContributors: [],
+  find: function(){
+    $.ajax({
+      url: 'https://api.github.com/repos/emberjs/ember.js/contributors',
+      dataType: 'jsonp',
+      context: this,
+      success: function(response){
+        response.data.forEach(function(contributor){
+          this.allContributors.addObject(App.Contributor.create(contributor))
+        }, this)
+      }
+    })
+    return this.allContributors;
+  },
+
+  findOne: function(username){
+    var contributor = App.Contributor.create({
+      login: username
+    });
+
+    $.ajax({
+      url: 'https://api.github.com/repos/emberjs/ember.js/contributors',
+      dataType: 'jsonp',
+      context: contributor,
+      success: function(response){
+        this.setProperties(response.data.findProperty('login', username));
+      }
+    })
+
+    return contributor;
+  }
+
 });
-App.SalutationController = Ember.ObjectController.extend();
-
-App.TraversalView = Ember.View.extend({
-  templateName: "traversal"
-});
-App.TraversalController = Ember.ObjectController.extend();
-
-App.HomeView = Em.View.extend({
-  template: Em.Handlebars.compile('<p><a {{action goHome href=true}}><em>Go Home</em></a></p>')
-});
-App.HomeController = Em.ObjectController.extend();
-
-App.BlankView = Em.View.extend();
-App.BlankController = Em.ObjectController.extend();
 
 App.Router = Ember.Router.extend({
   enableLogging:  true,
-  goToCars:  Ember.Route.transitionTo('cars'),
-  goToShoes:  Ember.Route.transitionTo('shoes'),
-  goHome:  Ember.Route.transitionTo('index'),
   root:  Ember.Route.extend({
     index:  Ember.Route.extend({
       route:  '/',
-      connectOutlets:  function(router, context){
-        router.get('applicationController').connectOutlet('greeting', 'salutation', { greeting: "My Ember App" });
-        router.get('applicationController').connectOutlet('body', 'blank');
-        router.get('applicationController').connectOutlet('footer', 'traversal');
+      showContributor: Ember.Route.transitionTo('show'),
+      connectOutlets: function(router){
+        router.get('applicationController').connectOutlet('allContributors', App.Contributor.find());
       }
     }),
-    cars:  Ember.Route.extend({
-      route: '/cars',
-      enter: function ( router ){
-        console.log("The cars sub-state was entered.");
+
+    show: Ember.Route.extend({
+      route: '/:githubUserName',
+      showAllContributors: Ember.Route.transitionTo('index'),
+      connectOutlets: function(router, context){
+        router.get('applicationController').connectOutlet('OneContributor', context);
       },
-      connectOutlets:  function(router, context){
-        router.get('applicationController').connectOutlet('greeting', 'salutation', { greeting: "Cars Route" });
-        router.get('applicationController').connectOutlet('body', 'cars');
-        router.get('applicationController').connectOutlet('footer', 'traversal');
-        router.get('traversalController').connectOutlet('home');
-      }
-    }),
-    shoes:  Ember.Route.extend({
-      route: '/shoes',
-      enter: function ( router ){
-        console.log("The shoes sub-state was entered.");
+      serialize: function(router, context){
+        return {
+          githubUserName: context.get('login')
+        }
       },
-      connectOutlets:  function(router, context){
-        router.get('applicationController').connectOutlet('greeting', 'salutation', { greeting: "Shoes Route" });
-        router.get('applicationController').connectOutlet('body', 'shoes');
-        router.get('applicationController').connectOutlet('footer', 'traversal');
-        router.get('traversalController').connectOutlet('home');
+      deserialize: function(router, urlParams){
+        return App.Contributor.findOne(urlParams.githubUserName);
       }
     })
   })

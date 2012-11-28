@@ -8,33 +8,21 @@
 </head>
 <body>
   <script type="text/x-handlebars" data-template-name="application">
-    {{outlet greeting}}
-    <p {{bindAttr class="isSlogan"}} >Ember is: {{slogan}}</p>
-    {{outlet body}}
-    {{outlet footer}}
-  </script>
-
-  <script type="text/x-handlebars" data-template-name="cars">
-    <hr/>
-    <h1>Cars</h1>
-    <p>Here in my car / I feel safest of all</p>
-  </script>
-
-  <script type="text/x-handlebars" data-template-name="shoes">
-    <hr/>
-    <h1>Shoes</h1>
-    <p><a href="http://youtu.be/v_Yx0X-eHn8">Shooz?</p>
-  </script>
-
-  <script type="text/x-handlebars" data-template-name="salutation">
-    <h1>{{greeting}}</h1>
-  </script>
-
-  <script type="text/x-handlebars" data-template-name="traversal">
-    <hr/>
-    <p><a {{action goToCars href=true}}>Go To Cars</a>
-    <p><a {{action goToShoes href=true}}>Go To Shoes</a>
+    <h1>Ember Committers</h1>
     {{outlet}}
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="contributors">
+    {{#each person in controller}}
+      <a {{action showContributor person}}> {{person.login}} </a>
+    {{/each}}
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="contributor">
+    <div>
+      <a {{action showAllContributors}}>All Contributors</a>
+    </div>
+    {{login}} - {{contributions}} contributions to Ember.js
   </script>
 
   <script src="http://cloud.github.com/downloads/wycats/handlebars.js/handlebars-1.0.rc.1.js"></script>
